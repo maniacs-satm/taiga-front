@@ -202,9 +202,10 @@ describe('backlog', function() {
     it.skip('drag backlog us', async function() {
         let dragableElements = backlogHelper.userStories();
 
-        let dragElement = dragableElements.get(1);
+        let dragElement = dragableElements.get(4);
         let dragElementHandler = dragElement.$('.icon-drag');
         let draggedElementRef = await backlogHelper.getUsRef(dragElement);
+
 
         await utils.common.drag(dragElementHandler, dragableElements.get(0));
         await browser.waitForAngular();

@@ -658,26 +658,54 @@ BacklogDirective = ($repo, $rootscope, $translate) ->
     <div class="doom-line"><span><%- text %></span></div>
     """)
 
+    velocityForecastingTemplate = _.template("""
+    <div class="velocity-forecasting-line"><span><%- text %></span></div>
+    """)
+
     linkDoomLine = ($scope, $el, $attrs, $ctrl) ->
-        reloadDoomLine = ->
+        reloadLines = ->
             if $scope.stats? and $scope.stats.total_points? and $scope.stats.total_points != 0
                 removeDoomlineDom()
+                removeVelocityForecastingDom()
 
                 stats = $scope.stats
 
                 total_points = stats.total_points
                 current_sum = stats.assigned_points
+                backlog_points_sum = 0
 
                 return if not $scope.userstories
 
+                doomLineAdded = false
+                velocityForecastingAdded = false
+
                 for us, i in $scope.userstories
                     current_sum += us.total_points
+                    backlog_points_sum += us.total_points
 
-                    if current_sum > total_points
+                    if stats.speed > 0 &&
+                      !velocityForecastingAdded &&
+                      backlog_points_sum > stats.speed
+                        domElement = $el.find('.backlog-table-body .us-item-row')[i]
+                        addVelocityForecasting(domElement)
+
+                        velocityForecastingAdded = true
+
+                    if !doomLineAdded && current_sum > total_points
                         domElement = $el.find('.backlog-table-body .us-item-row')[i]
                         addDoomLineDom(domElement)
 
+                        doomLineAdded = true
+
+                    if doomLineAdded && velocityForecastingAdded
                         break
+
+        removeVelocityForecastingDom = ->
+            $el.find(".velocity-forecasting-line").remove()
+
+        addVelocityForecasting = (element) ->
+            text = $translate.instant("BACKLOG.VELOCITY_FORECASTING")
+            $(element).before(velocityForecastingTemplate({"text": text}))
 
         removeDoomlineDom = ->
             $el.find(".doom-line").remove()
@@ -690,8 +718,8 @@ BacklogDirective = ($repo, $rootscope, $translate) ->
             rowElements = $el.find('.backlog-table-body .us-item-row')
             return _.map(rowElements, (x) -> angular.element(x))
 
-        $scope.$on("userstories:loaded", reloadDoomLine)
-        $scope.$watch("stats", reloadDoomLine)
+        $scope.$on("userstories:loaded", reloadLines)
+        $scope.$watch("stats", reloadLines)
 
     ## Move to current sprint link
 
@@ -751,6 +779,27 @@ BacklogDirective = ($repo, $rootscope, $translate) ->
             shiftPressed = !!event.shiftKey
 
             return true
+
+        $el.on "click", ".velocity-forecasting-line", (event) ->
+            ussToMoveDom = $('.velocity-forecasting-line').prevAll('.us-item-row')
+
+            ussToMove = _.map ussToMoveDom, (item) ->
+                itemScope = $(item).scope()
+                return itemScope.us
+
+            if $scope.currentSprint
+                ussToMove = _.map ussToMove, (us) ->
+                    us.milestone = $scope.currentSprint.id
+
+                    return us
+
+                $scope.$apply(_.partial(moveToCurrentSprint, ussToMove))
+            else
+                $rootscope.$broadcast("sprintform:create", $scope.projectId, ussToMove)
+
+        $rootscope.$on "sprintform:create:success:callback", (e, ussToMove) ->
+            console.log ussToMove
+            _.partial(moveToCurrentSprint, ussToMove)()
 
         # Enable move to current sprint only when there are selected us's
         $el.on "change", ".backlog-table-body input:checkbox", (event) ->
