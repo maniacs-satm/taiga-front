@@ -265,14 +265,6 @@ ProjectValuesDirective = ($log, $repo, $confirm, $location, animationFrame, $tra
             editionRow.removeClass('hidden')
             editionRow.find('input:visible').first().focus().select()
 
-        $el.on "keyup", ".edition input", (event) ->
-            if event.keyCode == 13
-                target = angular.element(event.currentTarget)
-                saveValue(target)
-            else if event.keyCode == 27
-                target = angular.element(event.currentTarget)
-                cancel(target)
-
         $el.on "keyup", ".new-value input", (event) ->
             if event.keyCode == 13
                 target = $el.find(".new-value")
@@ -370,6 +362,15 @@ ColorSelectionDirective = () ->
             $scope.$apply ->
                 $model.$modelValue.color = $scope.color
             $el.find(".select-color").hide()
+
+        $el.on "keyup", "input", (event) ->
+            if event.keyCode == 13
+                $scope.$apply ->
+                    $model.$modelValue.color = $scope.color
+                $el.find(".select-color").hide()
+
+            else if event.keyCode == 27
+                $el.find(".select-color").hide()
 
         $scope.$on "$destroy", ->
             $el.off()
@@ -688,3 +689,65 @@ ProjectCustomAttributesDirective = ($log, $confirm, animationFrame, $translate) 
 
 module.directive("tgProjectCustomAttributes", ["$log", "$tgConfirm", "animationFrame", "$translate",
                                                ProjectCustomAttributesDirective])
+
+
+#############################################################################
+## Tags Controller
+#############################################################################
+
+class ProjectTagsController extends mixOf(taiga.Controller, taiga.PageMixin)
+    @.$inject = [
+        "$scope",
+        "$rootScope",
+        "$tgRepo",
+        "tgAppMetaService",
+        "$translate"
+    ]
+
+    constructor: (@scope, @rootscope, @repo, @appMetaService, @translate) ->
+        @.loading = true
+        @rootscope.$on "project:loaded", =>
+            sectionName = @translate.instant(@scope.sectionName)
+            title = @translate.instant("ADMIN.CUSTOM_ATTRIBUTES.PAGE_TITLE", {
+                "sectionName": sectionName,
+                "projectName": @scope.project.name
+            })
+            description = @scope.project.description
+            @appMetaService.setAll(title, description)
+
+            @.loading = false
+            @.tagNames = Object.keys(@scope.project.tags_colors).sort()
+            @scope.projectTags = _.map(@.tagNames, (tagName) => {name: tagName, color: @scope.project.tags_colors[tagName]})
+
+    updateTag: (tag) ->
+        tags_colors = angular.copy(@scope.project.tags_colors)
+        tags_colors[tag.name] = tag.color
+        @scope.project.tags_colors = tags_colors
+        return @repo.save(@scope.project)
+
+module.controller("ProjectTagsController", ProjectTagsController)
+
+
+#############################################################################
+## Tags Directive
+#############################################################################
+
+ProjectTagDirective = () ->
+    link = ($scope, $el, $attrs) ->
+        $el.color = $scope.tag.color
+        $ctrl = $el.controller()
+
+        $scope.$on "$destroy", ->
+            $el.off()
+
+        $scope.$watch "tag.color", (newColor) =>
+            if $el.color != newColor
+                promise = $ctrl.updateTag($scope.tag)
+                promise.then null, (data) ->
+                    form.setErrors(data)
+
+                $el.color = newColor
+
+    return {link: link}
+
+module.directive("tgProjectTag", [ProjectTagDirective])
