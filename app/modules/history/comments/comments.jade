@@ -14,7 +14,7 @@ section.comments
         )
     tg-editable-wysiwyg.add-comment(
         ng-model="vm.type"
-        tg-check-permission="{{vm.modifyType}}"
+        tg-check-permission="{{::vm.canAddCommentPermission}}"
         tg-toggle-comment
     )
         textarea(

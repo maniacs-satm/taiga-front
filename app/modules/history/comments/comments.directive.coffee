@@ -20,10 +20,6 @@
 module = angular.module('taigaHistory')
 
 CommentsDirective = () ->
-
-    link = (scope, el, attrs, ctrl) ->
-        ctrl.setModifyType()
-
     return {
         scope: {
             type: "<",
@@ -39,8 +35,7 @@ CommentsDirective = () ->
         templateUrl:"history/comments/comments.html",
         bindToController: true,
         controller: 'CommentsCtrl',
-        controllerAs: "vm",
-        link: link
+        controllerAs: "vm"
     }
 
 module.directive("tgComments", CommentsDirective)

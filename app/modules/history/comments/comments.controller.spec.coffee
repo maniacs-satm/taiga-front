@@ -28,9 +28,7 @@ describe "CommentsController", ->
         inject ($controller) ->
             controller = $controller
 
-    it "set modification type", () ->
+    it "set can add comment permission", () ->
         commentsCtrl = controller "CommentsCtrl"
         commentsCtrl.name = "us"
-
-        commentsCtrl.setModifyType()
-        expect(commentsCtrl.modifyType).to.be.equal("modify_us")
+        expect(commentsCtrl.canAddCommentPermission).to.be.equal("comment_us")

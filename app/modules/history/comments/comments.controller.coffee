@@ -23,8 +23,6 @@ class CommentsController
     @.$inject = []
 
     constructor: () ->
-
-    setModifyType: () ->
-        @.modifyType = 'modify_' + @.name
+        @.canAddCommentPermission = 'comment_' + @.name
 
 module.controller("CommentsCtrl", CommentsController)
