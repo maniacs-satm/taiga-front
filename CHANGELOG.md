@@ -5,6 +5,7 @@
 
 ### Features
 - Show a confirmation notice when you exit edit mode by pressing ESC in the markdown inputs.
+- Errors (not found, server error, permissions and blocked project) don't change the current url.
 
 ### Misc
 - Lots of small and not so small bugfixes.
