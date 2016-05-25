@@ -231,6 +231,7 @@ TagLineDirective = ($rootScope, $repo, $rs, $confirm, $modelTransform, $template
 
     link = ($scope, $el, $attrs, $model) ->
         autocomplete = null
+        loading = false
 
         isEditable = ->
             if $attrs.requiredPerm?
@@ -243,6 +244,7 @@ TagLineDirective = ($rootScope, $repo, $rs, $confirm, $modelTransform, $template
             ctx = {
                 tags: _.map(tags, (t) -> {name: t, color: tagsColors[t]})
                 isEditable: isEditable()
+                loading: loading
             }
             html = $compile(templateTags(ctx))($scope)
             $el.find("div.tags-container").html(html)
@@ -270,8 +272,10 @@ TagLineDirective = ($rootScope, $repo, $rs, $confirm, $modelTransform, $template
 
         ## Aux methods
         addValue = (value) ->
+            loading = true
             value = trim(value.toLowerCase())
             return if value.length == 0
+            renderTags()
 
             transform = $modelTransform.save (item) ->
                 if not item.tags
@@ -287,6 +291,8 @@ TagLineDirective = ($rootScope, $repo, $rs, $confirm, $modelTransform, $template
 
             onSuccess = ->
                 $rootScope.$broadcast("object:updated")
+                loading = false
+                renderTags()
 
             onError = ->
                 $confirm.notify("error")
@@ -296,8 +302,10 @@ TagLineDirective = ($rootScope, $repo, $rs, $confirm, $modelTransform, $template
             return transform.then(onSuccess, onError)
 
         deleteValue = (value) ->
+            loading = true
             value = trim(value.toLowerCase())
             return if value.length == 0
+            renderTags()
 
             transform = $modelTransform.save (item) ->
                 tags = _.clone(item.tags, false)
@@ -307,6 +315,8 @@ TagLineDirective = ($rootScope, $repo, $rs, $confirm, $modelTransform, $template
 
             onSuccess = ->
                 $rootScope.$broadcast("object:updated")
+                loading = false
+                renderTags()
 
             onError = ->
                 $confirm.notify("error")
